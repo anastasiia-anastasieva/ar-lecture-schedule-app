@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>AR Lecture Schedule App</title>
+    <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <!-- Підключення AR.js з підтримкою геолокації -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+  </head>
+
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene
+      vr-mode-ui="enabled: false"
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+    >
+      <a-text
+        id="class-info" 
+        value="Checking class schedule..."
+        look-at="[camera]" 
+        position="0 0 -3"
+        scale="5 5 5"
+        gps-entity-place="latitude: 48.49767520800143; longitude: 32.26278994857887;"
+      ></a-text>
+      <a-camera gps-camera rotation-reader> </a-camera>
+    </a-scene>
+  </body>
+
+    <script>
+        // Масив з часами занять
+        const classTimes = [
+            { start: '08:30', end: '10:00' },
+            { start: '10:10', end: '11:40' },
+            { start: '12:10', end: '13:40' },
+            { start: '13:50', end: '15:20' }
+        ];
+
+        // Функція для розбору часу з рядка (Переводимо час у мілісекунди від початку дня)
+        function parseTime(time) {
+            const [hours, minutes] = time.split(':').map(num => parseInt(num, 10));
+            let date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+        }
+
+        // Функція для перевірки чи заняття зараз йде
+        function checkIfClassInSession(currentTime) {
+            for (let i = 0; i < classTimes.length; i++) {
+                const startTime = parseTime(classTimes[i].start);
+                const endTime = parseTime(classTimes[i].end);
+                if (currentTime >= startTime && currentTime < endTime) {
+                    return { inSession: true, endTime };
+                }
+            }
+            return { inSession: false };
+        }
+
+        // Функція для оновлення статусу занять
+        function updateClassStatus() {
+            const currentTime = new Date();
+            const classStatus = checkIfClassInSession(currentTime);
+            const textElement = document.querySelector('#class-info');
+
+            if (classStatus.inSession) {
+                const timeLeft = (classStatus.endTime - currentTime) / 60000; // Перевести в хвилини
+                textElement.setAttribute('value', 'Class is in session. Time left: ' + timeLeft.toFixed(0) + ' minutes.');
+            } else {
+                textElement.setAttribute('value', 'No class is currently in session.');
+            }
+        }
+
+        //Налаштування інтервалу оновлення статусу занять
+        setInterval(updateClassStatus, 60000);
+
+        //Виклик оновлення статусу занять відразу при завантаженні
+        updateClassStatus();
+    </script>
+</body>
+</html>
